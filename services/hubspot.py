@@ -49,7 +49,7 @@ def update_lead_status(lead_id, status):
     response = requests.patch(
         f"{BASE_URL}/crm/v3/objects/leads/{lead_id}",
         headers=HEADERS,
-        json={"properties": {"hs_lead_status": status}},
+        json={"properties": {"hs_pipeline_stage": status}},
     )
     response.raise_for_status()
     return response.json()
