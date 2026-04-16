@@ -77,3 +77,46 @@ def send_intake_form(lead_name, dob, parent_first_name, parent_last_name, email,
     print("LOBBIE RESPONSE:", response.text)
     response.raise_for_status()
     return response.json()
+
+
+def create_pdf(form_group_id):
+    """Request Lobbie to generate a PDF for a form group."""
+    token = get_access_token()
+    response = requests.post(
+        f"{LOBBIE_API_URL}/forms/pdf/create",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"formGroupId": form_group_id, "isPatient": True},
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def retrieve_pdf(s3_object_path):
+    """Retrieve the signed URL for a generated PDF."""
+    token = get_access_token()
+    response = requests.post(
+        f"{LOBBIE_API_URL}/forms/pdf/retrieve",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"s3ObjectPath": s3_object_path},
+    )
+    response.raise_for_status()
+    return response.json()
+
+def get_pdf(form_group_id):
+    """Get the PDF content for a completed form group."""
+    # Request PDF generation
+    create_response = create_pdf(form_group_id)
+    s3_path = create_response.get("data", {}).get("s3ObjectPath")
+    if not s3_path:
+        raise ValueError("No s3ObjectPath returned from Lobbie")
+
+    # Retrieve signed URL
+    retrieve_response = retrieve_pdf(s3_path)
+    signed_url = retrieve_response.get("data", {}).get("signedURL")
+    if not signed_url:
+        raise ValueError("No signedURL returned from Lobbie")
+
+    # Download PDF
+    pdf_response = requests.get(signed_url)
+    pdf_response.raise_for_status()
+    return pdf_response.content

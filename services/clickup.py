@@ -38,3 +38,15 @@ def create_intake_task(child_name, service_state):
         print("CLICKUP FIELD RESPONSE:", field_response.text)
 
     return task
+
+def upload_pdf_to_task(task_id, pdf_content, filename="intake_packet.pdf"):
+    """Upload a PDF file to a ClickUp task as an attachment."""
+    response = requests.post(
+        f"{BASE_URL}/task/{task_id}/attachment",
+        headers={"Authorization": CLICKUP_API_TOKEN},
+        files={"attachment": (filename, pdf_content, "application/pdf")},
+    )
+    print("CLICKUP UPLOAD STATUS:", response.status_code)
+    print("CLICKUP UPLOAD RESPONSE:", response.text)
+    response.raise_for_status()
+    return response.json()

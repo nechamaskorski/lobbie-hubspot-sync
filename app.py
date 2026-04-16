@@ -2,12 +2,12 @@ import requests
 import os
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
-from services.lobbie import send_intake_form
+from services.lobbie import send_intake_form, get_pdf   
 from services.hubspot import (
     get_lead_with_contact, update_lead_status, update_lead_lobbie_form_group_id,
     find_lead_by_lobbie_form_group_id, create_deal, update_deal_clickup_id, associate_deal
 )
-from services.clickup import create_intake_task
+from services.clickup import create_intake_task, upload_pdf_to_task
 from config import (
     LOBBIE_LOCATION_IDS, LOBBIE_INTAKE_FORM_EN, LOBBIE_CONSENT_FORM_EN,
     LOBBIE_INTAKE_FORM_ES, LOBBIE_CONSENT_FORM_ES, HS_LEAD_STAGE_INTAKE_PACKET_RECEIVED,
@@ -60,8 +60,8 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
 
     # Upload PDF to ClickUp (only for Lobbie webhook path)
     if include_pdf and form_group_id:
-        # TODO: implement PDF upload
-        print("PDF UPLOAD: coming soon")
+        pdf_content = get_pdf(form_group_id)
+        upload_pdf_to_task(clickup_task_id, pdf_content)
 
     return deal_id, clickup_task_id
 
