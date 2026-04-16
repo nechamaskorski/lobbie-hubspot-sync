@@ -14,7 +14,7 @@ def get_lead_with_contact(lead_id):
     response = requests.get(
         f"{BASE_URL}/crm/v3/objects/leads/{lead_id}",
         headers=HEADERS,
-        params={"properties": "hs_lead_status,service_state,hs_lead_name,dob,spanish_intake_packet"},
+        params={"properties": "hs_lead_status,service_state,hs_lead_name,dob,spanish_intake_packet,gender"},
     )
     response.raise_for_status()
     lead = response.json()
