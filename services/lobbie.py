@@ -142,7 +142,7 @@ def send_intake_form(lead_name, dob, gender, parent_first_name, parent_last_name
             "email": email,
         })
     parent_id = parent["id"]
-    print(f"PARENT PATIENT ID: {parent_id}")
+
 
     # Step 2: Find or create child patient
     child = None
@@ -150,7 +150,7 @@ def send_intake_form(lead_name, dob, gender, parent_first_name, parent_last_name
         results = search_patient(token, first_name=child_first, last_name=child_last, dob=dob)
         if results:
             child = results[0]
-            print(f"FOUND EXISTING CHILD: {child['id']}")
+   
 
     if not child:
         child_payload = {
@@ -162,7 +162,7 @@ def send_intake_form(lead_name, dob, gender, parent_first_name, parent_last_name
         if gender:
             child_payload["gender"] = gender
         child = create_patient(token, child_payload)
-        print(f"CREATED NEW CHILD: {child['id']}")
+
 
     child_id = child["id"]
 
@@ -178,15 +178,13 @@ def send_intake_form(lead_name, dob, gender, parent_first_name, parent_last_name
         "prefill": prefill,
     }
 
-    print("LOBBIE PAYLOAD:", payload)
 
     response = requests.post(
         f"{LOBBIE_API_URL}/forms/groups",
         headers={"Authorization": f"Bearer {token}"},
         json=payload,
     )
-    print("LOBBIE STATUS:", response.status_code)
-    print("LOBBIE RESPONSE:", response.text)
+
     response.raise_for_status()
     return response.json()
 
@@ -238,7 +236,6 @@ def get_pdf(form_group_id):
             json={"s3ObjectPath": s3_path},
         )
         retrieve_response.raise_for_status()
-        print(f"PDF RETRIEVE ATTEMPT {attempt + 1}:", retrieve_response.json())
         signed_url = retrieve_response.json().get("data", {}).get("signedURL")
         if signed_url:
             pdf_response = requests.get(signed_url)

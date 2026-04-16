@@ -40,7 +40,7 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
         stage_id=HS_DEAL_STAGE_INTAKE_PACKET_RECEIVED,
     )
     deal_id = deal.get("id")
-    print("DEAL CREATED:", deal_id)
+
 
             # Associate Deal to Contact
     if contact:
@@ -53,7 +53,7 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
         service_state=service_state,
     )
     clickup_task_id = clickup_task.get("id")
-    print("CLICKUP TASK CREATED:", clickup_task_id)
+
 
     # Store ClickUp task ID on the Deal
     update_deal_clickup_id(deal_id, clickup_task_id)
@@ -116,9 +116,7 @@ def send_intake():
 
     spanish_speaking = lead_props.get("spanish_intake_packet") == "true"
 
-    print("SPANISH SPEAKING:", spanish_speaking)
-    print("FORM TEMPLATE IDS WILL BE:", [LOBBIE_INTAKE_FORM_ES, LOBBIE_CONSENT_FORM_ES] if spanish_speaking else [LOBBIE_INTAKE_FORM_EN, LOBBIE_CONSENT_FORM_EN])
-
+   
     result = send_intake_form(
         lead_name=lead_name,
         dob=dob,
@@ -149,7 +147,7 @@ def lobbie_webhook():
     if secret != os.getenv("LOBBIE_WEBHOOK_SECRET"):
         return jsonify({"error": "unauthorized"}), 401
     data = request.get_json()
-    print("LOBBIE WEBHOOK RECEIVED:", data)
+
 
     if not data.get("isComplete"):
         return jsonify({"status": "ignored, not complete"}), 200
@@ -170,8 +168,6 @@ def lobbie_webhook():
         include_pdf=True,
         form_group_id=form_group_id,
     )
-
-
 
     return jsonify({"success": True, "lead_id": lead_id, "deal_id": deal_id, "clickup_task_id": clickup_task_id}), 200
 
@@ -195,34 +191,6 @@ def intake_received_manual():
 
     return jsonify({"success": True, "lead_id": lead_id, "deal_id": deal_id, "clickup_task_id": clickup_task_id}), 200
 
-
-@app.route("/lobbie-token", methods=["GET"])
-def get_token():
-    from services.lobbie import get_access_token
-    token = get_access_token()
-    return jsonify({"token": token})
-
-
-@app.route("/lobbie-attributes", methods=["GET"])
-def get_attributes():
-    from services.lobbie import get_access_token
-    token = get_access_token()
-    response = requests.get(
-        "https://api.lobbie.com/lobbie/api/developer/v1/forms/templates/attributes?formTemplateId=50376",
-        headers={"Authorization": f"Bearer {token}"}
-    )
-    return jsonify(response.json())
-
-
-@app.route("/lobbie-groups", methods=["GET"])
-def get_template_groups():
-    from services.lobbie import get_access_token
-    token = get_access_token()
-    response = requests.get(
-        "https://api.lobbie.com/lobbie/api/developer/v1/forms/templates/groups",
-        headers={"Authorization": f"Bearer {token}"}
-    )
-    return jsonify(response.json())
 
 
 if __name__ == "__main__":

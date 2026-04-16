@@ -20,8 +20,7 @@ def create_intake_task(child_name, service_state):
         headers=HEADERS,
         json={"name": child_name},
     )
-    print("CLICKUP STATUS:", response.status_code)
-    print("CLICKUP RESPONSE:", response.text)
+
     response.raise_for_status()
     task = response.json()
     task_id = task.get("id")
@@ -34,8 +33,6 @@ def create_intake_task(child_name, service_state):
             headers=HEADERS,
             json={"value": field_info["option_id"]},
         )
-        print("CLICKUP FIELD STATUS:", field_response.status_code)
-        print("CLICKUP FIELD RESPONSE:", field_response.text)
 
     return task
 
@@ -46,7 +43,6 @@ def upload_pdf_to_task(task_id, pdf_content, filename="intake_packet.pdf"):
         headers={"Authorization": CLICKUP_API_TOKEN},
         files={"attachment": (filename, pdf_content, "application/pdf")},
     )
-    print("CLICKUP UPLOAD STATUS:", response.status_code)
-    print("CLICKUP UPLOAD RESPONSE:", response.text)
+
     response.raise_for_status()
     return response.json()
