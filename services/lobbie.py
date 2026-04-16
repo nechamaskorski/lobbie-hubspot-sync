@@ -112,24 +112,24 @@ def get_pdf(form_group_id):
         json={"formGroupId": form_group_id, "isPatient": True},
     )
     create_response.raise_for_status()
-    print("PDF CREATE RESPONSE:", create_response.json())
     s3_path = create_response.json().get("data", {}).get("s3ObjectPath")
     if not s3_path:
         raise ValueError("No s3ObjectPath returned from Lobbie")
 
-    time.sleep(3)
+    # Retry up to 5 times with 5 second delays
+    for attempt in range(5):
+        time.sleep(5)
+        retrieve_response = requests.post(
+            f"{LOBBIE_API_URL}/forms/pdf/retrieve",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"s3ObjectPath": s3_path},
+        )
+        retrieve_response.raise_for_status()
+        print(f"PDF RETRIEVE ATTEMPT {attempt + 1}:", retrieve_response.json())
+        signed_url = retrieve_response.json().get("data", {}).get("signedURL")
+        if signed_url:
+            pdf_response = requests.get(signed_url)
+            pdf_response.raise_for_status()
+            return pdf_response.content
 
-    retrieve_response = requests.post(
-        f"{LOBBIE_API_URL}/forms/pdf/retrieve",
-        headers={"Authorization": f"Bearer {token}"},
-        json={"s3ObjectPath": s3_path},
-    )
-    retrieve_response.raise_for_status()
-    print("PDF RETRIEVE RESPONSE:", retrieve_response.json())
-    signed_url = retrieve_response.json().get("data", {}).get("signedURL")
-    if not signed_url:
-        raise ValueError("No signedURL returned from Lobbie")
-
-    pdf_response = requests.get(signed_url)
-    pdf_response.raise_for_status()
-    return pdf_response.content
+    raise ValueError("PDF generation timed out after 5 attempts")
