@@ -84,3 +84,30 @@ def find_lead_by_lobbie_form_group_id(form_group_id):
     response.raise_for_status()
     results = response.json().get("results", [])
     return results[0] if results else None
+
+
+def create_deal(child_name, pipeline_id, stage_id):
+    """Create a new Deal in HubSpot."""
+    response = requests.post(
+        f"{BASE_URL}/crm/v3/objects/deals",
+        headers=HEADERS,
+        json={
+            "properties": {
+                "dealname": child_name,
+                "pipeline": pipeline_id,
+                "dealstage": stage_id,
+            }
+        },
+    )
+    response.raise_for_status()
+    return response.json()
+
+def update_deal_clickup_id(deal_id, clickup_task_id):
+    """Store ClickUp task ID on the HubSpot Deal."""
+    response = requests.patch(
+        f"{BASE_URL}/crm/v3/objects/deals/{deal_id}",
+        headers=HEADERS,
+        json={"properties": {"clickup_id": str(clickup_task_id)}},
+    )
+    response.raise_for_status()
+    return response.json()
