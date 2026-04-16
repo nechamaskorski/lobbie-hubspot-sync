@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from services.lobbie import send_intake_form
 from services.hubspot import (
     get_lead_with_contact, update_lead_status, update_lead_lobbie_form_group_id,
-    find_lead_by_lobbie_form_group_id, create_deal, update_deal_clickup_id
+    find_lead_by_lobbie_form_group_id, create_deal, update_deal_clickup_id, associate_deal
 )
 from services.clickup import create_intake_task
 from config import (
@@ -41,6 +41,12 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
     )
     deal_id = deal.get("id")
     print("DEAL CREATED:", deal_id)
+
+            # Associate Deal to Lead and Contact
+    associate_deal(deal_id, "leads", lead_id, 583)
+    if contact:
+        contact_id = contact.get("id")
+        associate_deal(deal_id, "contacts", contact_id, 3)
 
     # Create ClickUp task
     clickup_task = create_intake_task(
@@ -163,6 +169,8 @@ def lobbie_webhook():
         include_pdf=True,
         form_group_id=form_group_id,
     )
+
+
 
     return jsonify({"success": True, "lead_id": lead_id, "deal_id": deal_id, "clickup_task_id": clickup_task_id}), 200
 

@@ -111,3 +111,13 @@ def update_deal_clickup_id(deal_id, clickup_task_id):
     )
     response.raise_for_status()
     return response.json()
+
+def associate_deal(deal_id, object_type, object_id, association_type_id):
+    """Associate a Deal with another object in HubSpot."""
+    response = requests.put(
+        f"{BASE_URL}/crm/v4/objects/deals/{deal_id}/associations/{object_type}/{object_id}",
+        headers=HEADERS,
+        json=[{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": association_type_id}],
+    )
+    response.raise_for_status()
+    return response.json()
