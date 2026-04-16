@@ -42,8 +42,7 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
     deal_id = deal.get("id")
     print("DEAL CREATED:", deal_id)
 
-            # Associate Deal to Lead and Contact
-    associate_deal(deal_id, "leads", lead_id, 583)
+            # Associate Deal to Contact
     if contact:
         contact_id = contact.get("id")
         associate_deal(deal_id, "contacts", contact_id, 3)
