@@ -20,9 +20,11 @@ def create_intake_task(child_name, service_state):
     }
 
     response = requests.post(
-        f"{BASE_URL}/list/{list_id}/task",
-        headers=HEADERS,
-        json=payload,
-    )
+            f"{BASE_URL}/list/{list_id}/task",
+            headers=HEADERS,
+            json=payload,
+        )
+    print("CLICKUP STATUS:", response.status_code)
+    print("CLICKUP RESPONSE:", response.text)
     response.raise_for_status()
     return response.json()
