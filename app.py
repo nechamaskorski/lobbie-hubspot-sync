@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
 from services.lobbie import send_intake_form
 from services.hubspot import get_lead_with_contact, update_lead_status, update_lead_lobbie_form_group_id, find_lead_by_lobbie_form_group_id
+from services.clickup import create_intake_task
 from config import LOBBIE_LOCATION_IDS, LOBBIE_INTAKE_FORM_EN, LOBBIE_CONSENT_FORM_EN, LOBBIE_INTAKE_FORM_ES, LOBBIE_CONSENT_FORM_ES, HS_LEAD_STAGE_INTAKE_PACKET_RECEIVED
 app = Flask(__name__)
 
@@ -105,6 +106,19 @@ def lobbie_webhook():
 
     # Advance Lead to Intake Packet Received
     update_lead_status(lead_id, HS_LEAD_STAGE_INTAKE_PACKET_RECEIVED)
+
+        # Get lead details for ClickUp
+    lead, contact = get_lead_with_contact(lead_id)
+    lead_props = lead.get("properties", {})
+    lead_name = lead_props.get("hs_lead_name")
+    service_state = lead_props.get("service_state")
+
+    # Create ClickUp task
+    clickup_task = create_intake_task(
+        child_name=lead_name,
+        service_state=service_state,
+    )
+    print("CLICKUP TASK CREATED:", clickup_task.get("id"))
 
     return jsonify({"success": True, "lead_id": lead_id}), 200
 
