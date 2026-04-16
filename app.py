@@ -99,6 +99,7 @@ def send_intake():
     parent_first_name = contact_props.get("firstname")
     parent_last_name = contact_props.get("lastname")
     email = contact_props.get("email")
+    gender = lead_props.get("gender")
 
     # Don't send if already sent
     if lead_props.get("lobbie_form_group_id"):
@@ -121,6 +122,7 @@ def send_intake():
     result = send_intake_form(
         lead_name=lead_name,
         dob=dob,
+        gender=gender,
         parent_first_name=parent_first_name,
         parent_last_name=parent_last_name,
         email=email,
