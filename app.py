@@ -1,4 +1,5 @@
 import requests
+import os
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
 from services.lobbie import send_intake_form
@@ -136,6 +137,10 @@ def lobbie_webhook():
     """
     Receives webhook from Lobbie when patient completes their forms.
     """
+
+    secret = request.headers.get("X-Lobbie-Secret")
+    if secret != os.getenv("LOBBIE_WEBHOOK_SECRET"):
+        return jsonify({"error": "unauthorized"}), 401
     data = request.get_json()
     print("LOBBIE WEBHOOK RECEIVED:", data)
 
