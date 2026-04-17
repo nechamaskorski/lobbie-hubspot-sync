@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 from services.lobbie import send_intake_form, get_pdf
 from services.hubspot import (
     get_lead_with_contact, update_lead_status, update_lead_lobbie_form_group_id,
-    find_lead_by_lobbie_form_group_id, create_deal, update_deal_clickup_id, associate_deal
+    find_lead_by_lobbie_form_group_id, create_deal, update_deal_clickup_id, associate_deal,
+    get_client_from_lead
 )
 from services.clickup import create_intake_task, upload_pdf_to_task
 from services.email import send_error_alert
@@ -38,6 +39,16 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
         stage_id=HS_DEAL_STAGE_INTAKE_PACKET_RECEIVED,
     )
     deal_id = deal.get("id")
+
+    # Associate Client custom object to Deal
+    client_id = get_client_from_lead(lead_id)
+    if client_id:
+        associate_deal(deal_id, "2-47660783", client_id, 44, association_category="USER_DEFINED")
+
+    # Associate Deal to Contact
+    if contact:
+        contact_id = contact.get("id")
+        associate_deal(deal_id, "contacts", contact_id, 3)
 
     if contact:
         contact_id = contact.get("id")

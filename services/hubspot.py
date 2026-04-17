@@ -112,13 +112,25 @@ def update_deal_clickup_id(deal_id, clickup_task_id):
     response.raise_for_status()
     return response.json()
 
-def associate_deal(deal_id, object_type, object_id, association_type_id):
-    """Associate a Deal with another object in HubSpot."""
+def associate_deal(deal_id, object_type, object_id, association_type_id, association_category="HUBSPOT_DEFINED"):
+    """Associate a Deal with another object in HubSpot.
+    Use association_category='USER_DEFINED' for custom object associations."""
     response = requests.put(
         f"{BASE_URL}/crm/v4/objects/deals/{deal_id}/associations/{object_type}/{object_id}",
         headers=HEADERS,
-        json=[{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": association_type_id}],
+        json=[{"associationCategory": association_category, "associationTypeId": association_type_id}],
     )
-
     response.raise_for_status()
     return response.json()
+
+def get_client_from_lead(lead_id):
+    """Get the Client custom object ID associated to a Lead."""
+    response = requests.get(
+        f"{BASE_URL}/crm/v4/objects/leads/{lead_id}/associations/2-47660783",
+        headers= HEADERS
+    )
+    response.raise_for_status()
+    results = response.json().get("results", [])
+    if not results:
+        return None
+    return results[0].get("toObjectId")
