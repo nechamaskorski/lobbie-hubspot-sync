@@ -14,7 +14,7 @@ def get_lead_with_contact(lead_id):
     response = requests.get(
         f"{BASE_URL}/crm/v3/objects/leads/{lead_id}",
         headers=HEADERS,
-        params={"properties": "hs_lead_status,service_state,hs_lead_name,dob,spanish_intake_packet,gender"},
+        params={"properties": "hs_lead_status,service_state,hs_lead_name,dob,spanish_intake_packet,gender,home_phone,street_address,city,state_region_code,postal_code,diagnosing_dr,referral_source,scho,desired_times_of_services,attachments,gclid"},
     )
     response.raise_for_status()
     lead = response.json()
@@ -36,7 +36,7 @@ def get_lead_with_contact(lead_id):
     contact_response = requests.get(
         f"{BASE_URL}/crm/v3/objects/contacts/{contact_id}",
         headers=HEADERS,
-        params={"properties": "firstname,lastname,email"},
+        params={"properties": "firstname,lastname,email,phone"},
     )
     contact_response.raise_for_status()
     contact = contact_response.json()
@@ -134,3 +134,14 @@ def get_client_from_lead(lead_id):
     if not results:
         return None
     return results[0].get("toObjectId")
+
+
+def get_client_properties(client_id):
+    """Get properties from a HubSpot Client custom object."""
+    response = requests.get(
+        f"{BASE_URL}/crm/v3/objects/2-47660783/{client_id}",
+        headers=HEADERS,
+        params={"properties": "primary_insurance,secondary_insurance,service_state"},
+    )
+    response.raise_for_status()
+    return response.json().get("properties", {})

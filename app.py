@@ -6,7 +6,7 @@ from services.lobbie import send_intake_form, get_pdf
 from services.hubspot import (
     get_lead_with_contact, update_lead_status, update_lead_lobbie_form_group_id,
     find_lead_by_lobbie_form_group_id, create_deal, update_deal_clickup_id, associate_deal,
-    get_client_from_lead
+    get_client_from_lead, get_client_properties
 )
 from services.clickup import create_intake_task, upload_pdf_to_task
 from services.email import send_error_alert
@@ -28,6 +28,7 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
     """Shared logic for when intake packet is received."""
     lead, contact = get_lead_with_contact(lead_id)
     lead_props = lead.get("properties", {})
+    contact_props = contact.get("properties", {}) if contact else {}
     lead_name = lead_props.get("hs_lead_name")
     service_state = lead_props.get("service_state")
 
@@ -45,19 +46,21 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
     if client_id:
         associate_deal(deal_id, "2-47660783", client_id, 45, association_category="USER_DEFINED")
 
+    client_props = get_client_properties(client_id) if client_id else {}
+
     # Associate Deal to Contact
     if contact:
         contact_id = contact.get("id")
         associate_deal(deal_id, "contacts", contact_id, 3)
 
-    if contact:
-        contact_id = contact.get("id")
-        associate_deal(deal_id, "contacts", contact_id, 3)
 
     clickup_task = create_intake_task(
-        child_name=lead_name,
-        service_state=service_state,
-    )
+    child_name=lead_name,
+    service_state=service_state,
+    lead_props=lead_props,
+    contact_props=contact_props,
+    client_props=client_props,
+)
     clickup_task_id = clickup_task.get("id")
 
     update_deal_clickup_id(deal_id, clickup_task_id)
@@ -202,17 +205,7 @@ def intake_received_manual():
         send_error_alert("/intake-received-manual", lead_id, e)
         return jsonify({"error": str(e)}), 500
     
-@app.route("/test-client-association/<lead_id>/<deal_id>", methods=["GET"])
-def test_client_association(lead_id, deal_id):
-    from services.hubspot import get_client_from_lead, associate_deal
-    try:
-        client_id = get_client_from_lead(lead_id)
-        if not client_id:
-            return jsonify({"error": "no client found for lead"}), 404
-        associate_deal(deal_id, "2-47660783", client_id, 45, association_category="USER_DEFINED")
-        return jsonify({"success": True, "client_id": client_id}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
 
 
 if __name__ == "__main__":
