@@ -201,6 +201,18 @@ def intake_received_manual():
     except Exception as e:
         send_error_alert("/intake-received-manual", lead_id, e)
         return jsonify({"error": str(e)}), 500
+    
+@app.route("/test-client-association/<lead_id>/<deal_id>", methods=["GET"])
+def test_client_association(lead_id, deal_id):
+    from services.hubspot import get_client_from_lead, associate_deal
+    try:
+        client_id = get_client_from_lead(lead_id)
+        if not client_id:
+            return jsonify({"error": "no client found for lead"}), 404
+        associate_deal(deal_id, "2-47660783", client_id, 45, association_category="USER_DEFINED")
+        return jsonify({"success": True, "client_id": client_id}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
