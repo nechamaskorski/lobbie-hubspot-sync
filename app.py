@@ -43,7 +43,7 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
     # Associate Client custom object to Deal
     client_id = get_client_from_lead(lead_id)
     if client_id:
-        associate_deal(deal_id, "2-47660783", client_id, 44, association_category="USER_DEFINED")
+        associate_deal(deal_id, "2-47660783", client_id, 45, association_category="USER_DEFINED")
 
     # Associate Deal to Contact
     if contact:
