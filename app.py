@@ -44,7 +44,10 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
     # Associate Client custom object to Deal
     client_id = get_client_from_lead(lead_id)
     if client_id:
-        associate_deal(deal_id, "2-47660783", client_id, 45, association_category="USER_DEFINED")
+        try:
+            associate_deal(deal_id, "2-47660783", client_id, 45, association_category="USER_DEFINED")
+        except Exception:
+            pass  # Association may already exist, continue
 
     client_props = get_client_properties(client_id) if client_id else {}
 
@@ -205,6 +208,16 @@ def intake_received_manual():
         send_error_alert("/intake-received-manual", lead_id, e)
         return jsonify({"error": str(e)}), 500
     
+
+@app.route("/test-lobbie-form/<int:form_group_id>", methods=["GET"])
+def test_lobbie_form(form_group_id):
+    from services.lobbie import get_access_token
+    token = get_access_token()
+    response = requests.get(
+        f"https://api.lobbie.com/lobbie/api/v1/forms/groups/{form_group_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    return jsonify(response.json()), response.status_code
 
 
 
