@@ -214,7 +214,7 @@ def test_lobbie_form(form_group_id):
     from services.lobbie import get_access_token
     token = get_access_token()
     response = requests.get(
-        f"https://api.lobbie.com/lobbie/api/v1/forms/groups/{form_group_id}",
+        f"https://api.lobbie.com/lobbie/api/v1/forms/groups/{form_group_id}?isIncludeMappedFormAnswers=true",
         headers={"Authorization": f"Bearer {token}"},
     )
     return jsonify(response.json()), response.status_code
