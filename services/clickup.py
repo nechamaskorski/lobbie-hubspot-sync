@@ -219,3 +219,13 @@ def upload_pdf_to_task(task_id, pdf_content, filename="intake_packet.pdf"):
 
     response.raise_for_status()
     return response.json()
+
+def post_task_comment(task_id, comment):
+    """Post a comment on a ClickUp task."""
+    response = requests.post(
+        f"{BASE_URL}/task/{task_id}/comment",
+        headers=HEADERS,
+        json={"comment_text": comment, "notify_all": False},
+    )
+    response.raise_for_status()
+    return response.json()

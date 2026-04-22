@@ -145,3 +145,24 @@ def get_client_properties(client_id):
     )
     response.raise_for_status()
     return response.json().get("properties", {})
+
+def get_lead_notes(lead_id):
+    """Fetch all notes associated to a Lead."""
+    response = requests.get(
+        f"{BASE_URL}/crm/v4/objects/leads/{lead_id}/associations/notes",
+        headers=HEADERS,
+    )
+    response.raise_for_status()
+    results = response.json().get("results", [])
+    return [r.get("toObjectId") for r in results if r.get("toObjectId")]
+
+
+def get_note(note_id):
+    """Fetch a single note with body and author details."""
+    response = requests.get(
+        f"{BASE_URL}/crm/v3/objects/notes/{note_id}",
+        headers=HEADERS,
+        params={"properties": "hs_note_body,hs_created_by_user_id,hs_createdate"},
+    )
+    response.raise_for_status()
+    return response.json().get("properties", {})

@@ -6,9 +6,9 @@ from services.lobbie import send_intake_form, get_pdf
 from services.hubspot import (
     get_lead_with_contact, update_lead_status, update_lead_lobbie_form_group_id,
     find_lead_by_lobbie_form_group_id, create_deal, update_deal_clickup_id, associate_deal,
-    get_client_from_lead, get_client_properties
+    get_client_from_lead, get_client_properties, get_lead_notes, get_note
 )
-from services.clickup import create_intake_task, upload_pdf_to_task
+from services.clickup import create_intake_task, upload_pdf_to_task, post_task_comment
 from services.email import send_error_alert
 from config import (
     LOBBIE_LOCATION_IDS, LOBBIE_INTAKE_FORM_EN, LOBBIE_CONSENT_FORM_EN,
@@ -72,6 +72,16 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
         pdf_content = get_pdf(form_group_id)
         upload_pdf_to_task(clickup_task_id, pdf_content)
 
+
+    # Post HubSpot notes as ClickUp comments
+    note_ids = get_lead_notes(lead_id)
+    for note_id in note_ids:
+        note = get_note(note_id)
+        body = note.get("hs_note_body", "").strip()
+        date = note.get("hs_createdate", "")[:10]  # just the date portion
+        if body:
+            post_task_comment(clickup_task_id, f"{date}\n{body}")
+            
     return deal_id, clickup_task_id
 
 
