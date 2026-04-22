@@ -230,11 +230,14 @@ def post_task_comment(task_id, comment):
     return response.json()
 
 def update_clickup_insurance_fields(task_id, insurance_fields):
-    """Update insurance text fields on a ClickUp task."""
+    """Update insurance text fields on a ClickUp task from Lobbie form answers."""
     field_map = {
-        "insurance_company": "7b129add-1987-4230-803e-644f7b42f8b5",  # Insurance - Intake Packet
-        "insurance_id": "c4acc13d-8618-49b4-8b35-d3420c8a2025",        # Insurance ID
-        "policyholder": "30e7adcf-ed06-4418-89fd-eb42e37c72f7",        # Policyholder
+        "insurance_company": "7b129add-1987-4230-803e-644f7b42f8b5",       # Insurance - Intake Packet
+        "insurance_id": "c4acc13d-8618-49b4-8b35-d3420c8a2025",             # Insurance ID
+        "policyholder": "30e7adcf-ed06-4418-89fd-eb42e37c72f7",             # Policyholder
+        "secondary_insurance_company": "2aeed84d-3076-4182-b3a0-60c480208f96",  # Secondary Insurance - Intake Packet
+        "secondary_insurance_id": "397ddcdc-ee5d-448b-b6b6-fb7df2c4478a",   # Secondary Insurance ID
+        "secondary_policyholder": "0f6fb32d-0239-472d-91d3-0b7861033558",   # Secondary Policyholder
     }
     for key, field_id in field_map.items():
         value = insurance_fields.get(key, "")

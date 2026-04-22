@@ -103,40 +103,44 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None, lobbi
             except Exception as e:
                 print(f"Failed to upload attachment {file_id}: {e}")
 
-                # Process Lobbie form data (attachments + insurance fields)
+            
+    # Process Lobbie form data (attachments + insurance fields)
     if lobbie_forms:
-        # Find the ABA Intake Form (template 50376) and Consent Form (template 50953)
         intake_form = next((f for f in lobbie_forms if f.get("formTemplateId") == 50376), None)
-        consent_form = next((f for f in lobbie_forms if f.get("formTemplateId") == 50953), None)
 
-        # Extract insurance text fields from labeled answers
-        lobbie_insurance_fields = {}
         if intake_form:
             labeled = intake_form.get("answers", {}).get("labeled", {})
+
+            # Extract primary insurance text fields
             lobbie_insurance_fields = {
                 "insurance_company": labeled.get("Insurance Company", ""),
                 "insurance_id": labeled.get("ID #", ""),
                 "policyholder": labeled.get("Subscriber Name (whose job provides plan?)", ""),
+                "secondary_insurance_company": labeled.get("Insurance Company - 1", ""),
+                "secondary_insurance_id": labeled.get("ID # - 1", ""),
+                "secondary_policyholder": labeled.get("Subscriber Name (whose job provides plan?) - 1", ""),
             }
 
-        # Update ClickUp task with insurance text fields
-        if any(lobbie_insurance_fields.values()):
-            update_clickup_insurance_fields(clickup_task_id, lobbie_insurance_fields)
+            # Update ClickUp task with insurance text fields
+            if any(lobbie_insurance_fields.values()):
+                update_clickup_insurance_fields(clickup_task_id, lobbie_insurance_fields)
 
-        # Upload file attachments from ABA Intake Form
-        if intake_form:
-            labeled = intake_form.get("answers", {}).get("labeled", {})
-            attachment_labels = [
-                "Please upload the complete doctor's autism diagnostic report:",
-                "Insurance Card Front",
-                "Insurance Card Back",
-            ]
-            for label in attachment_labels:
+            # Upload file attachments with proper labels as filenames
+            attachment_map = {
+                "Please upload the complete doctor's autism diagnostic report:": "Diagnostic Report",
+                "Insurance Card Front": "Insurance Card Front",
+                "Insurance Card Back": "Insurance Card Back",
+                "Insurance Card Front - 1": "Secondary Insurance Card Front",
+                "Insurance Card Back - 1": "Secondary Insurance Card Back",
+            }
+            for label, friendly_name in attachment_map.items():
                 files = labeled.get(label, [])
                 if isinstance(files, list):
                     for f in files:
                         signed_url = f.get("signedURL")
-                        filename = f.get("fileName", "attachment")
+                        original_filename = f.get("fileName", "attachment")
+                        extension = original_filename.rsplit(".", 1)[-1] if "." in original_filename else ""
+                        filename = f"{friendly_name}.{extension}" if extension else friendly_name
                         if signed_url:
                             try:
                                 file_response = requests.get(signed_url)
