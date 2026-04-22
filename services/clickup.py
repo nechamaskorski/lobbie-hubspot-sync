@@ -2,6 +2,7 @@ import requests
 import phonenumbers
 from config import CLICKUP_CLIENTS_LIST_IDS, CLICKUP_INTAKE_STATUS_FIELDS
 import os
+import time
 
 BASE_URL = "https://api.clickup.com/api/v2"
 HEADERS = {"Authorization": os.getenv("CLICKUP_API_TOKEN")}
@@ -211,13 +212,20 @@ def create_intake_task(child_name, service_state, lead_props=None, contact_props
 
 def upload_file_to_task(task_id, file_content, filename="attachment"):
     """Upload a file as an attachment to a ClickUp task."""
-    response = requests.post(
-        f"{BASE_URL}/task/{task_id}/attachment",
-        headers={"Authorization": os.getenv("CLICKUP_API_TOKEN")},
-        files={"attachment": (filename, file_content)},
-    )
-    response.raise_for_status()
-    return response.json()
+    for attempt in range(3):
+        try:
+            response = requests.post(
+                f"{BASE_URL}/task/{task_id}/attachment",
+                headers={"Authorization": os.getenv("CLICKUP_API_TOKEN")},
+                files={"attachment": (filename, file_content)},
+                timeout=60,
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            if attempt == 2:
+                raise
+            time.sleep(2)
 
 def post_task_comment(task_id, comment):
     """Post a comment on a ClickUp task."""
