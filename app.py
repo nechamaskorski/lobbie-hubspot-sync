@@ -100,6 +100,7 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None, lobbi
                     # Extract filename from URL or use file_id as fallback
                     filename = decode_filename(signed_url) or f"attachment_{file_id}"
                     upload_file_to_task(clickup_task_id, file_response.content, filename)
+                    print(f"UPLOADED HS ATTACHMENT: {filename}")
             except Exception as e:
                 print(f"Failed to upload attachment {file_id}: {e}")
 
@@ -151,8 +152,11 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None, lobbi
                                 file_response = requests.get(signed_url)
                                 file_response.raise_for_status()
                                 upload_file_to_task(clickup_task_id, file_response.content, filename)
+                                print(f"UPLOADED LOBBIE ATTACHMENT: {filename}")
                             except Exception as e:
                                 print(f"Failed to upload Lobbie attachment {filename}: {e}")
+
+    print(f"INTAKE COMPLETE: lead={lead_id} deal={deal_id} clickup={clickup_task_id}")
 
     return deal_id, clickup_task_id
 
@@ -250,6 +254,7 @@ def lobbie_webhook():
             return jsonify({"error": f"no lead found for form group id {form_group_id}"}), 404
 
         lead_id = lead.get("id")
+        print(f"WEBHOOK RECEIVED: form_group_id={form_group_id} lead_id={lead_id}")
         lobbie_forms = data.get("forms", [])
 
         deal_id, clickup_task_id = handle_intake_received(
@@ -273,6 +278,7 @@ def intake_received_manual():
     """
     data = request.get_json()
     lead_id = data.get("lead_id")
+    print(f"MANUAL INTAKE RECEIVED: lead_id={lead_id}")
 
     try:
         if not lead_id:
