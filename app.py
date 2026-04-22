@@ -6,9 +6,10 @@ from services.lobbie import send_intake_form, get_pdf
 from services.hubspot import (
     get_lead_with_contact, update_lead_status, update_lead_lobbie_form_group_id,
     find_lead_by_lobbie_form_group_id, create_deal, update_deal_clickup_id, associate_deal,
-    get_client_from_lead, get_client_properties, get_lead_notes, get_note
+    get_client_from_lead, get_client_properties, get_lead_notes, get_note,
+    get_attachment_signed_url
 )
-from services.clickup import create_intake_task, upload_pdf_to_task, post_task_comment
+from services.clickup import create_intake_task, upload_file_to_task, post_task_comment
 from services.email import send_error_alert
 from config import (
     LOBBIE_LOCATION_IDS, LOBBIE_INTAKE_FORM_EN, LOBBIE_CONSENT_FORM_EN,
@@ -71,7 +72,7 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
 
     if include_pdf and form_group_id:
         pdf_content = get_pdf(form_group_id)
-        upload_pdf_to_task(clickup_task_id, pdf_content)
+        upload_file_to_task(clickup_task_id, pdf_content, "intake_packet.pdf")
 
 
     # Post HubSpot notes as ClickUp comments
@@ -84,6 +85,22 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
             clean_body = strip_html(body)
             if clean_body:
                 post_task_comment(clickup_task_id, f"{date}\n{clean_body}")
+
+        # Upload HubSpot Lead attachments to ClickUp task
+    attachments_raw = lead_props.get("attachments", "")
+    if attachments_raw:
+        attachment_ids = [a.strip() for a in attachments_raw.split(";") if a.strip()]
+        for file_id in attachment_ids:
+            try:
+                signed_url = get_attachment_signed_url(file_id)
+                if signed_url:
+                    file_response = requests.get(signed_url)
+                    file_response.raise_for_status()
+                    # Extract filename from URL or use file_id as fallback
+                    filename = signed_url.split("/")[-1].split("?")[0] or f"attachment_{file_id}"
+                    upload_file_to_task(clickup_task_id, file_response.content, filename)
+            except Exception as e:
+                print(f"Failed to upload attachment {file_id}: {e}")
 
     return deal_id, clickup_task_id
 

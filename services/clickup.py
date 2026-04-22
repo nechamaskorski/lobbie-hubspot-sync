@@ -209,14 +209,13 @@ def create_intake_task(child_name, service_state, lead_props=None, contact_props
 
     return task
 
-def upload_pdf_to_task(task_id, pdf_content, filename="intake_packet.pdf"):
-    """Upload a PDF file to a ClickUp task as an attachment."""
+def upload_file_to_task(task_id, file_content, filename="attachment"):
+    """Upload a file as an attachment to a ClickUp task."""
     response = requests.post(
         f"{BASE_URL}/task/{task_id}/attachment",
-        headers= HEADERS,
-        files={"attachment": (filename, pdf_content, "application/pdf")},
+        headers={"Authorization": os.getenv("CLICKUP_API_TOKEN")},
+        files={"attachment": (filename, file_content)},
     )
-
     response.raise_for_status()
     return response.json()
 

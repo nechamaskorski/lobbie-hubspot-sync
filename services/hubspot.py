@@ -168,3 +168,13 @@ def get_note(note_id):
     )
     response.raise_for_status()
     return response.json().get("properties", {})
+
+
+def get_attachment_signed_url(file_id):
+    """Get a signed download URL for a HubSpot file attachment."""
+    response = requests.get(
+        f"{BASE_URL}/files/v3/files/{file_id}/signed-url",
+        headers=HEADERS,
+    )
+    response.raise_for_status()
+    return response.json().get("url")
