@@ -109,16 +109,21 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None, lobbi
         intake_form = next((f for f in lobbie_forms if f.get("formTemplateId") == 50376), None)
 
         if intake_form:
-            labeled = intake_form.get("answers", {}).get("labeled", {})
+         
+            # Extract insurance fields using raw field IDs (labeled answers overwrite duplicates)
+            raw_answers = intake_form.get("answers", {})
+            labeled = raw_answers.get("labeled", {})
 
-            # Extract primary insurance text fields
+            has_secondary = labeled.get("Do you have Secondary Insurance?", {}).get("label") == "Yes"
+
             lobbie_insurance_fields = {
-                "insurance_company": labeled.get("Insurance Company", ""),
-                "insurance_id": labeled.get("ID #", ""),
-                "policyholder": labeled.get("Subscriber Name (whose job provides plan?)", ""),
-                "secondary_insurance_company": labeled.get("Insurance Company - 1", ""),
-                "secondary_insurance_id": labeled.get("ID # - 1", ""),
-                "secondary_policyholder": labeled.get("Subscriber Name (whose job provides plan?) - 1", ""),
+                "insurance_company": raw_answers.get("5923533", ""),
+                "insurance_id": raw_answers.get("5923534", ""),
+                "policyholder": raw_answers.get("5923535", ""),
+                "secondary_insurance_company": raw_answers.get("5923542", "") if has_secondary else "",
+                "secondary_insurance_id": raw_answers.get("5923543", "") if has_secondary else "",
+                "secondary_policyholder": raw_answers.get("5923544", "") if has_secondary else "",
+                "has_secondary": has_secondary,
             }
 
             # Update ClickUp task with insurance text fields
