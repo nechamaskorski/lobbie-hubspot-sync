@@ -228,3 +228,22 @@ def post_task_comment(task_id, comment):
     )
     response.raise_for_status()
     return response.json()
+
+def update_clickup_insurance_fields(task_id, insurance_fields):
+    """Update insurance text fields on a ClickUp task."""
+    field_map = {
+        "insurance_company": "7b129add-1987-4230-803e-644f7b42f8b5",  # Insurance - Intake Packet
+        "insurance_id": "c4acc13d-8618-49b4-8b35-d3420c8a2025",        # Insurance ID
+        "policyholder": "30e7adcf-ed06-4418-89fd-eb42e37c72f7",        # Policyholder
+    }
+    for key, field_id in field_map.items():
+        value = insurance_fields.get(key, "")
+        if value:
+            try:
+                requests.post(
+                    f"{BASE_URL}/task/{task_id}/field/{field_id}",
+                    headers=HEADERS,
+                    json={"value": value},
+                )
+            except Exception as e:
+                print(f"Failed to update ClickUp field {field_id}: {e}")

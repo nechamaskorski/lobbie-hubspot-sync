@@ -9,7 +9,7 @@ from services.hubspot import (
     get_client_from_lead, get_client_properties, get_lead_notes, get_note,
     get_attachment_signed_url
 )
-from services.clickup import create_intake_task, upload_file_to_task, post_task_comment
+from services.clickup import create_intake_task, upload_file_to_task, post_task_comment, update_clickup_insurance_fields
 from services.email import send_error_alert
 from config import (
     LOBBIE_LOCATION_IDS, LOBBIE_INTAKE_FORM_EN, LOBBIE_CONSENT_FORM_EN,
@@ -26,13 +26,14 @@ def get_due_date_unix(days=7):
     return int((datetime.utcnow() + timedelta(days=days)).timestamp() * 1000)
 
 
-def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
+def handle_intake_received(lead_id, include_pdf=False, form_group_id=None, lobbie_forms=None):
     """Shared logic for when intake packet is received."""
     lead, contact = get_lead_with_contact(lead_id)
     lead_props = lead.get("properties", {})
     contact_props = contact.get("properties", {}) if contact else {}
     lead_name = lead_props.get("hs_lead_name")
     service_state = lead_props.get("service_state")
+    lobbie_forms = lobbie_forms or []
 
     update_lead_status(lead_id, HS_LEAD_STAGE_INTAKE_PACKET_RECEIVED)
 
@@ -60,12 +61,12 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
 
 
     clickup_task = create_intake_task(
-    child_name=lead_name,
-    service_state=service_state,
-    lead_props=lead_props,
-    contact_props=contact_props,
-    client_props=client_props,
-)
+        child_name=lead_name,
+        service_state=service_state,
+        lead_props=lead_props,
+        contact_props=contact_props,
+        client_props=client_props,
+    )
     clickup_task_id = clickup_task.get("id")
 
     update_deal_clickup_id(deal_id, clickup_task_id)
@@ -101,6 +102,48 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
                     upload_file_to_task(clickup_task_id, file_response.content, filename)
             except Exception as e:
                 print(f"Failed to upload attachment {file_id}: {e}")
+
+                # Process Lobbie form data (attachments + insurance fields)
+    if lobbie_forms:
+        # Find the ABA Intake Form (template 50376) and Consent Form (template 50953)
+        intake_form = next((f for f in lobbie_forms if f.get("formTemplateId") == 50376), None)
+        consent_form = next((f for f in lobbie_forms if f.get("formTemplateId") == 50953), None)
+
+        # Extract insurance text fields from labeled answers
+        lobbie_insurance_fields = {}
+        if intake_form:
+            labeled = intake_form.get("answers", {}).get("labeled", {})
+            lobbie_insurance_fields = {
+                "insurance_company": labeled.get("Insurance Company", ""),
+                "insurance_id": labeled.get("ID #", ""),
+                "policyholder": labeled.get("Subscriber Name (whose job provides plan?)", ""),
+            }
+
+        # Update ClickUp task with insurance text fields
+        if any(lobbie_insurance_fields.values()):
+            update_clickup_insurance_fields(clickup_task_id, lobbie_insurance_fields)
+
+        # Upload file attachments from ABA Intake Form
+        if intake_form:
+            labeled = intake_form.get("answers", {}).get("labeled", {})
+            attachment_labels = [
+                "Please upload the complete doctor's autism diagnostic report:",
+                "Insurance Card Front",
+                "Insurance Card Back",
+            ]
+            for label in attachment_labels:
+                files = labeled.get(label, [])
+                if isinstance(files, list):
+                    for f in files:
+                        signed_url = f.get("signedURL")
+                        filename = f.get("fileName", "attachment")
+                        if signed_url:
+                            try:
+                                file_response = requests.get(signed_url)
+                                file_response.raise_for_status()
+                                upload_file_to_task(clickup_task_id, file_response.content, filename)
+                            except Exception as e:
+                                print(f"Failed to upload Lobbie attachment {filename}: {e}")
 
     return deal_id, clickup_task_id
 
@@ -177,9 +220,7 @@ def send_intake():
 
 @app.route("/lobbie-webhook", methods=["POST"])
 def lobbie_webhook():
-    """
-    Receives webhook from Lobbie when patient completes their forms.
-    """
+    """Receives webhook from Lobbie when patient completes their forms."""
     data = request.get_json()
     lead_id = None
 
@@ -200,11 +241,13 @@ def lobbie_webhook():
             return jsonify({"error": f"no lead found for form group id {form_group_id}"}), 404
 
         lead_id = lead.get("id")
+        lobbie_forms = data.get("forms", [])
 
         deal_id, clickup_task_id = handle_intake_received(
             lead_id=lead_id,
             include_pdf=True,
             form_group_id=form_group_id,
+            lobbie_forms=lobbie_forms,
         )
 
         return jsonify({"success": True, "lead_id": lead_id, "deal_id": deal_id, "clickup_task_id": clickup_task_id}), 200
@@ -212,7 +255,6 @@ def lobbie_webhook():
     except Exception as e:
         send_error_alert("/lobbie-webhook", lead_id, e)
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/intake-received-manual", methods=["POST"])
 def intake_received_manual():
