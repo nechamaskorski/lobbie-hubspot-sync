@@ -1,11 +1,13 @@
 import requests
 from config import HUBSPOT_API_TOKEN
 
+
 HEADERS = {
     "Authorization": f"Bearer {HUBSPOT_API_TOKEN}",
     "Content-Type": "application/json",
 }
 BASE_URL = "https://api.hubapi.com"
+
 
 
 def get_lead_with_contact(lead_id):

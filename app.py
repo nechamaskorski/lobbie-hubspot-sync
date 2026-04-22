@@ -15,6 +15,7 @@ from config import (
     LOBBIE_INTAKE_FORM_ES, LOBBIE_CONSENT_FORM_ES, HS_LEAD_STAGE_INTAKE_PACKET_RECEIVED,
     HS_DEAL_PIPELINE_ID, HS_DEAL_STAGE_INTAKE_PACKET_RECEIVED
 )
+from services.utils import strip_html
 
 app = Flask(__name__)
 
@@ -80,8 +81,10 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
         body = note.get("hs_note_body", "").strip()
         date = note.get("hs_createdate", "")[:10]  # just the date portion
         if body:
-            post_task_comment(clickup_task_id, f"{date}\n{body}")
-            
+            clean_body = strip_html(body)
+            if clean_body:
+                post_task_comment(clickup_task_id, f"{date}\n{clean_body}")
+
     return deal_id, clickup_task_id
 
 
