@@ -296,16 +296,6 @@ def intake_received_manual():
         return jsonify({"error": str(e)}), 500
     
 
-@app.route("/test-lobbie-form/<int:form_group_id>", methods=["GET"])
-def test_lobbie_form(form_group_id):
-    from services.lobbie import get_access_token
-    token = get_access_token()
-    response = requests.get(
-        f"https://api.lobbie.com/lobbie/api/v1/forms/groups/{form_group_id}?isIncludeMappedFormAnswers=true",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    return jsonify(response.json()), response.status_code
-
 
 
 if __name__ == "__main__":
