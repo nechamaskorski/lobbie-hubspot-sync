@@ -16,7 +16,7 @@ from config import (
     LOBBIE_INTAKE_FORM_ES, LOBBIE_CONSENT_FORM_ES, HS_LEAD_STAGE_INTAKE_PACKET_RECEIVED,
     HS_DEAL_PIPELINE_ID, HS_DEAL_STAGE_INTAKE_PACKET_RECEIVED
 )
-from services.utils import strip_html
+from services.utils import strip_html, decode_filename
 
 app = Flask(__name__)
 
@@ -97,7 +97,7 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None):
                     file_response = requests.get(signed_url)
                     file_response.raise_for_status()
                     # Extract filename from URL or use file_id as fallback
-                    filename = signed_url.split("/")[-1].split("?")[0] or f"attachment_{file_id}"
+                    filename = decode_filename(signed_url) or f"attachment_{file_id}"
                     upload_file_to_task(clickup_task_id, file_response.content, filename)
             except Exception as e:
                 print(f"Failed to upload attachment {file_id}: {e}")
