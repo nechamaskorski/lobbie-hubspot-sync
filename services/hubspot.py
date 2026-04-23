@@ -56,16 +56,18 @@ def update_lead_status(lead_id, status):
     response.raise_for_status()
     return response.json()
 
-def update_lead_lobbie_form_group_id(lead_id, form_group_id):
-    """Write Lobbie form group ID back to the Lead."""
+def update_lead_lobbie_form_group_id(lead_id, form_group_id, patient_form_url=None):
+    """Write Lobbie form group ID (and optionally patient form URL) back to the Lead."""
+    properties = {"lobbie_form_group_id": str(form_group_id)}
+    if patient_form_url:
+        properties["lobbie_patient_form_url"] = patient_form_url
     response = requests.patch(
         f"{BASE_URL}/crm/v3/objects/leads/{lead_id}",
         headers=HEADERS,
-        json={"properties": {"lobbie_form_group_id": str(form_group_id)}},
+        json={"properties": properties},
     )
     response.raise_for_status()
     return response.json()
-
 
 def find_lead_by_lobbie_form_group_id(form_group_id):
     """Search for a Lead by Lobbie form group ID."""
@@ -178,3 +180,22 @@ def get_attachment_signed_url(file_id):
     )
     response.raise_for_status()
     return response.json().get("url")
+
+def get_lead_owner_email(lead_id):
+    """Get the email of the HubSpot user who owns the Lead."""
+    response = requests.get(
+        f"{BASE_URL}/crm/v3/objects/leads/{lead_id}",
+        headers=HEADERS,
+        params={"properties": "hubspot_owner_id"},
+    )
+    response.raise_for_status()
+    owner_id = response.json().get("properties", {}).get("hubspot_owner_id")
+    if not owner_id:
+        return None
+
+    owner_response = requests.get(
+        f"{BASE_URL}/crm/v3/owners/{owner_id}",
+        headers=HEADERS,
+    )
+    owner_response.raise_for_status()
+    return owner_response.json().get("email")

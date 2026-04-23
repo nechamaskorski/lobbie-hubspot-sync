@@ -7,10 +7,10 @@ from services.hubspot import (
     get_lead_with_contact, update_lead_status, update_lead_lobbie_form_group_id,
     find_lead_by_lobbie_form_group_id, create_deal, update_deal_clickup_id, associate_deal,
     get_client_from_lead, get_client_properties, get_lead_notes, get_note,
-    get_attachment_signed_url
+    get_attachment_signed_url, get_lead_owner_email
 )
 from services.clickup import create_intake_task, upload_file_to_task, post_task_comment, update_clickup_insurance_fields
-from services.email import send_error_alert
+from services.email import send_error_alert, send_intake_email
 from config import (
     LOBBIE_LOCATION_IDS, LOBBIE_INTAKE_FORM_EN, LOBBIE_CONSENT_FORM_EN,
     LOBBIE_INTAKE_FORM_ES, LOBBIE_CONSENT_FORM_ES, HS_LEAD_STAGE_INTAKE_PACKET_RECEIVED,
@@ -221,11 +221,29 @@ def send_intake():
         )
 
         form_group_id = result.get("data", {}).get("id")
+        patient_form_url = result.get("data", {}).get("urls", {}).get("patient")
+
         if form_group_id:
-            update_lead_lobbie_form_group_id(lead_id, form_group_id)
+            update_lead_lobbie_form_group_id(lead_id, form_group_id, patient_form_url)
+
+        # Send intake email to parent, sending as the lead owner
+        if patient_form_url and email:
+            try:
+                owner_email = get_lead_owner_email(lead_id)
+                send_intake_email(
+                    parent_email=email,
+                    parent_first_name=parent_first_name,
+                    child_name=lead_name,
+                    form_url=patient_form_url,
+                    owner_email=owner_email,
+                    is_spanish=spanish_speaking,
+                )
+            except Exception as e:
+                # Don't fail the whole request if email sending fails
+                print(f"Failed to send intake email: {e}")
 
         return jsonify({"success": True, "lobbie_response": result}), 200
-
+    
     except Exception as e:
         send_error_alert("/send-intake", lead_id, e)
         return jsonify({"error": str(e)}), 500
