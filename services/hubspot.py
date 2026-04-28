@@ -199,3 +199,48 @@ def get_lead_owner_email(lead_id):
     )
     owner_response.raise_for_status()
     return owner_response.json().get("email")
+
+def get_contact_from_client(client_id):
+    """Get the Contact ID associated to a Client custom object."""
+    response = requests.get(
+        f"{BASE_URL}/crm/v4/objects/2-47660783/{client_id}/associations/contacts",
+        headers=HEADERS,
+    )
+    response.raise_for_status()
+    results = response.json().get("results", [])
+    if not results:
+        return None
+    return results[0].get("toObjectId")
+
+
+def associate_client_to_contact(client_id, contact_id):
+    """Associate a Client custom object to a Contact (Parent/Guardian, typeId=48)."""
+    response = requests.put(
+        f"{BASE_URL}/crm/v4/objects/2-47660783/{client_id}/associations/contacts/{contact_id}",
+        headers=HEADERS,
+        json=[{"associationCategory": "USER_DEFINED", "associationTypeId": 48}],
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def post_note_on_client(client_id, note_body):
+    """Post a note on a Client custom object."""
+    response = requests.post(
+        f"{BASE_URL}/crm/v3/objects/notes",
+        headers=HEADERS,
+        json={
+            "properties": {
+                "hs_note_body": note_body,
+                "hs_timestamp": str(int(__import__("time").time() * 1000)),
+            },
+            "associations": [
+                {
+                    "to": {"id": client_id},
+                    "types": [{"associationCategory": "USER_DEFINED", "associationTypeId": 33}],
+                }
+            ],
+        },
+    )
+    response.raise_for_status()
+    return response.json()

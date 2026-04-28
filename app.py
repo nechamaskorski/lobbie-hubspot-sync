@@ -7,7 +7,7 @@ from services.hubspot import (
     get_lead_with_contact, update_lead_status, update_lead_lobbie_form_group_id,
     find_lead_by_lobbie_form_group_id, create_deal, update_deal_clickup_id, associate_deal,
     get_client_from_lead, get_client_properties, get_lead_notes, get_note,
-    get_attachment_signed_url, get_lead_owner_email
+    get_attachment_signed_url, get_lead_owner_email, get_contact_from_client, associate_client_to_contact, post_note_on_client
 )
 from services.clickup import create_intake_task, upload_file_to_task, post_task_comment, update_clickup_insurance_fields
 from services.email import send_error_alert, send_intake_email
@@ -207,6 +207,20 @@ def send_intake():
             return jsonify({"error": f"No Lobbie location found for state: {service_state}"}), 400
 
         spanish_speaking = lead_props.get("spanish_intake_packet") == "true"
+
+        # Self-heal Client→Contact association if missing
+        client_id = get_client_from_lead(lead_id)
+        if client_id:
+            existing_contact = get_contact_from_client(client_id)
+            if existing_contact:
+                post_note_on_client(client_id, "✅ Client→Contact association already present at send-intake.")
+            else:
+                try:
+                    contact_id = contact.get("id")
+                    associate_client_to_contact(client_id, contact_id)
+                    post_note_on_client(client_id, "⚠️ Client→Contact association was MISSING at send-intake — fixed automatically.")
+                except Exception as e:
+                    post_note_on_client(client_id, f"❌ Client→Contact association was MISSING and fix FAILED: {e}")
 
         result = send_intake_form(
             lead_name=lead_name,
