@@ -142,15 +142,24 @@ def send_intake_form(lead_name, dob, gender, parent_first_name, parent_last_name
             "email": email,
         })
     parent_id = parent["id"]
+    time.sleep(1)  # prevent Lobbie dedup collision
+    print(f"PARENT FULL RECORD: {parent}")
 
     print(f"PARENT: id={parent_id} name={parent_first_name} {parent_last_name}")
+
+
+    
+
     # Step 2: Find or create child patient
     child = None
     if child_first and dob:
         results = search_patient(token, first_name=child_first, last_name=child_last, dob=dob)
+        print(f"CHILD SEARCH INPUTS: first={child_first} last={child_last} dob={dob}")
+        print(f"CHILD SEARCH RESULTS: {results}")
         if results:
-            child = results[0]
-   
+            non_parent = [r for r in results if r["id"] != parent_id]
+            if non_parent:
+                child = non_parent[0]
 
     if not child:
         child_payload = {
@@ -161,8 +170,9 @@ def send_intake_form(lead_name, dob, gender, parent_first_name, parent_last_name
             child_payload["dateOfBirth"] = dob
         if gender:
             child_payload["gender"] = gender
+        print(f"CHILD PAYLOAD: {child_payload}")
         child = create_patient(token, child_payload)
-
+        print(f"CHILD CREATE RESPONSE: {child}")
 
     child_id = child["id"]
     print(f"CHILD: id={child_id}")
