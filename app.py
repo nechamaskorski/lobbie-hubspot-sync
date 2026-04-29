@@ -259,6 +259,8 @@ def send_intake():
         return jsonify({"success": True, "lobbie_response": result}), 200
     
     except Exception as e:
+        import traceback
+        print(f"SEND INTAKE ERROR: {traceback.format_exc()}")
         send_error_alert("/send-intake", lead_id, e)
         return jsonify({"error": str(e)}), 500
 
