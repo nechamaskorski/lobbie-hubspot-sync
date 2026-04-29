@@ -128,6 +128,9 @@ def send_intake_form(lead_name, dob, gender, parent_first_name, parent_last_name
             child_first = lead_name
             prefill["first_name"] = lead_name
 
+    print(f"LEAD NAME RAW: '{lead_name}'")
+    print(f"CHILD FIRST: '{child_first}' CHILD LAST: '{child_last}'")
+
     if dob:
         prefill["date_of_birth"] = dob
     if parent_first_name:
