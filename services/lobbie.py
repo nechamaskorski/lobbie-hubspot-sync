@@ -66,6 +66,8 @@ def create_patient(token, patient_data):
         },
         json={"patients": [patient_data]},
     )
+    if not response.ok:
+        print(f"LOBBIE CREATE PATIENT ERROR: {response.text}")
     response.raise_for_status()
     results = response.json()
     if isinstance(results, list) and results:
