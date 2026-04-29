@@ -80,7 +80,7 @@ def handle_intake_received(lead_id, include_pdf=False, form_group_id=None, lobbi
     note_ids = get_lead_notes(lead_id)
     for note_id in note_ids:
         note = get_note(note_id)
-        body = note.get("hs_note_body", "").strip()
+        body = (note.get("hs_note_body") or "").strip()
         date = note.get("hs_createdate", "")[:10]  # just the date portion
         if body:
             clean_body = strip_html(body)
