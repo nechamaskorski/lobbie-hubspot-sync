@@ -201,7 +201,7 @@ def get_lead_owner_email(lead_id):
     return owner_response.json().get("email")
 
 def get_contact_from_client(client_id):
-    """Get the Contact ID associated to a Client custom object."""
+    """Get the Parent/Guardian Contact ID associated to a Client custom object."""
     response = requests.get(
         f"{BASE_URL}/crm/v4/objects/2-47660783/{client_id}/associations/contacts",
         headers=HEADERS,
@@ -210,7 +210,13 @@ def get_contact_from_client(client_id):
     results = response.json().get("results", [])
     if not results:
         return None
-    return results[0].get("toObjectId")
+    # Only consider Parent/Guardian associations (typeId=48), not Referring Provider etc.
+    for result in results:
+        association_types = result.get("associationTypes", [])
+        for assoc_type in association_types:
+            if assoc_type.get("typeId") == 48:
+                return result.get("toObjectId")
+    return None
 
 
 def associate_client_to_contact(client_id, contact_id):
