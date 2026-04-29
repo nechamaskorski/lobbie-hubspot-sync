@@ -118,6 +118,7 @@ def send_intake_form(lead_name, dob, gender, parent_first_name, parent_last_name
     child_first = ""
     child_last = ""
     if lead_name:
+        lead_name = lead_name.strip()
         parts = lead_name.rsplit(" ", 1)
         if len(parts) == 2:
             child_first = parts[0]
