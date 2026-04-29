@@ -143,7 +143,7 @@ def send_intake_form(lead_name, dob, gender, parent_first_name, parent_last_name
         })
     parent_id = parent["id"]
 
-
+    print(f"PARENT: id={parent_id} name={parent_first_name} {parent_last_name}")
     # Step 2: Find or create child patient
     child = None
     if child_first and dob:
@@ -165,6 +165,8 @@ def send_intake_form(lead_name, dob, gender, parent_first_name, parent_last_name
 
 
     child_id = child["id"]
+    print(f"CHILD: id={child_id}")
+    print(f"FORM ASSIGNED TO: {child_id}")
 
     # Step 3: Create parent/child relationship
     create_patient_relationship(token, parent_id, child_id)
